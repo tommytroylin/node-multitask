@@ -8,12 +8,8 @@ process.on('message', async(message: MessageFromMaster) => {
     const start: MessageFromWorker = { type: MessageType.start, time: Date.now(), payload };
     process.send(start);
     let result;
-    if (payload.processor) {
-      result = require(payload.processor)();
-    } else {
-      result = require(payload.work);
-    }
-    if (result instanceof Promise) {
+    result = require(payload.work)(payload.data);
+    if (result instanceof Promise || typeof result.then === 'function') {
       result = await result;
     }
     (payload as Result).result = result;

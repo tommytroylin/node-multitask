@@ -12,7 +12,7 @@ export const enum MessageType {
 
 export interface Task {
   work: string;
-  processor?: string;
+  data?: any;
   __dirname?: string;
 }
 
@@ -52,4 +52,3 @@ export interface ProcessManagement {
   reference: ChildProcess;
   isBusy: boolean;
 }
-

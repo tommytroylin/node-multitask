@@ -52,8 +52,8 @@ export class MultiTask {
           newProcess.isBusy = true;
           break;
         case MessageType.finish:
-          const registeredTask = this.getRegisteredTask(message.payload.uuid);
           this.logger(`Process ${newProcess.reference.pid} finished running Task ${message.payload.uuid} at ${message.time}`);
+          const registeredTask = this.popRegisteredTask(message.payload.uuid);
           newProcess.isBusy = false;
           MultiTask._dispatchNewTaskTo(newProcess, this.pendingTasks.shift());
           if (message.payload.error) {
@@ -70,11 +70,13 @@ export class MultiTask {
     this.registeredTasks[task.uuid] = task;
   }
 
-  private getRegisteredTask(uuid: string): RegisteredTask {
-    return this.registeredTasks[uuid];
+  private popRegisteredTask(uuid: string): RegisteredTask {
+    const task = this.registeredTasks[uuid];
+    delete this.registeredTasks[uuid];
+    return task;
   }
 
-  private async initialize() {
+  initialize() {
     if (this.initialized) {
       return;
     }
@@ -90,18 +92,17 @@ export class MultiTask {
   }
 
   async runTask(task: Task): Promise<any> {
-    await this.initialize();
-    let { work, processor, __dirname }  = task;
+    this.initialize();
+    let { work, __dirname, data }  = task;
     const uuid = uuidV4();
     if (__dirname) {
       work = join(__dirname, work);
-      processor = processor ? join(__dirname, processor) : processor;
     }
     return await new Promise((resolve, reject) => {
       const newTask: RegisteredTask = {
         uuid,
         work,
-        processor,
+        data,
         resolve,
         reject,
       };
