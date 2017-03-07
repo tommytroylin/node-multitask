@@ -1,6 +1,7 @@
 import { ChildProcess } from 'child_process';
 
 type timestamp = number;
+type logger = (...args) => any;
 
 export const enum MessageType {
   dispatch,
@@ -30,6 +31,7 @@ export interface Result extends TaskWithUUID {
 }
 
 export interface Options {
+  logger?: false| null | logger;
   thread?: number;
 }
 

@@ -3,7 +3,7 @@ import { cpus } from 'os';
 import { join } from 'path';
 import { v4 as uuidV4 } from 'uuid';
 
-import { Task, TaskWithUUID, Options, ProcessManagement, MessageFromMaster, MessageFromWorker, MessageType, RegisteredTask } from  '../types/index';
+import { Task, TaskWithUUID, Options, ProcessManagement, MessageFromMaster, MessageFromWorker, MessageType, RegisteredTask, logger } from  '../types/index';
 
 const numberOfCPUs = cpus().length;
 
@@ -22,9 +22,19 @@ export class MultiTask {
   childProcesses: ProcessManagement[] = [];
   pendingTasks: TaskWithUUID[] = [];
   registeredTasks = {};
+  logger: logger;
 
   constructor(options: Options) {
     this.options = options || {};
+    this.logger = console.log;
+    if (typeof options.logger === 'function') {
+      this.logger = options.logger
+    } else if (options.logger === false || options.logger === null) {
+      this.logger = () => {
+      };
+    } else if (options.logger !== undefined) {
+      console.log(`options.logger must be type false | null | (...args) => any`);
+    }
   }
 
   private _getAnIdleProcess(): ProcessManagement {
@@ -35,15 +45,15 @@ export class MultiTask {
     return (message: MessageFromWorker) => {
       switch (message.type) {
         case MessageType.receive:
-          console.log(`Process ${newProcess.reference.pid} received Task ${message.payload.uuid} at ${message.time}`);
+          this.logger(`Process ${newProcess.reference.pid} received Task ${message.payload.uuid} at ${message.time}`);
           break;
         case MessageType.start:
-          console.log(`Process ${newProcess.reference.pid} started running Task ${message.payload.uuid} at ${message.time}`);
+          this.logger(`Process ${newProcess.reference.pid} started running Task ${message.payload.uuid} at ${message.time}`);
           newProcess.isBusy = true;
           break;
         case MessageType.finish:
-          console.log(`Process ${newProcess.reference.pid} finished running Task ${message.payload.uuid} at ${message.time}`);
           const registeredTask = this.getRegisteredTask(message.payload.uuid);
+          this.logger(`Process ${newProcess.reference.pid} finished running Task ${message.payload.uuid} at ${message.time}`);
           newProcess.isBusy = false;
           MultiTask._dispatchNewTaskTo(newProcess, this.pendingTasks.shift());
           if (message.payload.error) {
@@ -68,11 +78,11 @@ export class MultiTask {
     if (this.initialized) {
       return;
     }
-    console.log(`Initializing Master ${process.pid}`);
+    this.logger(`Initializing Master ${process.pid}`);
     const { thread = numberOfCPUs - 1 } = this.options;
     for (let i = 0; i < thread; i += 1) {
       const newProcess: ProcessManagement = { reference: fork(`${__dirname}/worker`), isBusy: false };
-      console.log(`Initializing Worker ${newProcess.reference.pid}`);
+      this.logger(`Initializing Worker ${newProcess.reference.pid}`);
       newProcess.reference.on('message', this._generateMessageHandler(newProcess));
       this.childProcesses.push(newProcess);
     }
