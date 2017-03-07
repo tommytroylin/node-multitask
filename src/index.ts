@@ -116,4 +116,12 @@ export class MultiTask {
     });
   }
 
+  killAll(force?: boolean) {
+    // TODO exit when last task finished
+    for (const childProcess of this.childProcesses) {
+      childProcess.reference.kill();
+    }
+    this.initialized = false;
+  }
+
 }
