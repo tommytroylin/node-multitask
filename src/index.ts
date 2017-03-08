@@ -27,12 +27,11 @@ export class MultiTask {
   constructor(options: Options) {
     this.options = options || {};
     this.logger = console.log;
-    if (typeof options.logger === 'function') {
-      this.logger = options.logger
-    } else if (options.logger === false || options.logger === null) {
-      this.logger = () => {
-      };
-    } else if (options.logger !== undefined) {
+    if (typeof this.options.logger === 'function') {
+      this.logger = this.options.logger
+    } else if (this.options.logger === false || this.options.logger === null) {
+      this.logger = () => {};
+    } else if (this.options.logger !== undefined) {
       console.log(`options.logger must be type false | null | (...args) => any`);
     }
   }
