@@ -1,7 +1,7 @@
 import { MessageFromMaster, MessageType, MessageFromWorker, Result } from  '../types/index';
 
 process.on('message', async(message: MessageFromMaster) => {
-  const payload = message.payload;
+  const payload = { ...message.payload };
   const receive: MessageFromWorker = { type: MessageType.receive, time: Date.now(), payload };
   process.send(receive);
   try {
