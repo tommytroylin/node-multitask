@@ -18,6 +18,7 @@ export class MultiTask {
   }
 
   private _restartWorker(oldProcess: ProcessManagement) {
+    this.logger(`Worker ${oldProcess.reference.pid} seems to be terminated`);
     try {
       oldProcess.reference.kill();
     } catch (e) {}
@@ -70,11 +71,15 @@ export class MultiTask {
           this.logger(`Process ${newProcess.reference.pid} finished running Task ${message.payload.uuid} at ${message.time}`);
           const registeredTask = this.popRegisteredTask(message.payload.uuid);
           newProcess.isBusy = false;
-          this._dispatchTaskTo(newProcess, this.pendingTasks.shift());
-          if (message.payload.error) {
-            registeredTask.reject(message.payload.error);
-          } else {
-            registeredTask.resolve(message.payload.result);
+          if (!message.willExit) {
+            this._dispatchTaskTo(newProcess, this.pendingTasks.shift());
+          }
+          if (registeredTask) {
+            if (message.payload.error) {
+              registeredTask.reject(message.payload.error);
+            } else {
+              registeredTask.resolve(message.payload.result);
+            }
           }
           break;
       }
@@ -105,7 +110,7 @@ export class MultiTask {
 
   async runTask(task: Task): Promise<any> {
     this.initialize();
-    let { work, __dirname, data }  = task;
+    let { work, __dirname }  = task;
     const uuid = uuidV4();
     if (__dirname) {
       work = join(__dirname, work);
@@ -113,10 +118,10 @@ export class MultiTask {
     return await new Promise((resolve, reject) => {
       const newTask: RegisteredTask = {
         uuid,
-        work,
-        data,
         resolve,
         reject,
+        ...task,
+        work,
       };
       this.registerTask(newTask);
       const idleProcess = this._getAnIdleProcess();

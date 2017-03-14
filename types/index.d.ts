@@ -18,6 +18,7 @@ export interface Task {
 
 export interface TaskWithUUID extends Task {
   uuid: string;
+  timeout?: number;
 }
 
 export interface RegisteredTask extends TaskWithUUID {
@@ -46,6 +47,7 @@ export interface MessageFromMaster extends Message {
 
 export interface MessageFromWorker extends Message {
   payload: Result;
+  willExit?: boolean;
 }
 
 export interface ProcessManagement {
