@@ -3,9 +3,24 @@ import { cpus } from 'os';
 import { join } from 'path';
 import { v4 as uuidV4 } from 'uuid';
 
-import { Task, TaskWithUUID, Options, ProcessManagement, MessageFromMaster, MessageFromWorker, MessageType, RegisteredTask, logger } from  '../types/index';
+import {
+  Task,
+  TaskWithUUID,
+  Options,
+  ProcessManagement,
+  MessageFromMaster,
+  MessageFromWorker,
+  MessageType,
+  RegisteredTask,
+  logger,
+  ErrorObject,
+} from  '../types/index';
 
 const numberOfCPUs = cpus().length;
+
+function parseError({ message }: ErrorObject): Error {
+  return new Error(`${message}`);
+}
 
 export class MultiTask {
 
@@ -21,7 +36,8 @@ export class MultiTask {
     this.logger(`Worker ${oldProcess.reference.pid} seems to be terminated`);
     try {
       oldProcess.reference.kill();
-    } catch (e) {}
+    } catch (e) {
+    }
     oldProcess = this._startWorker();
     this._dispatchTaskTo(oldProcess, this.pendingTasks.shift());
   }
@@ -47,7 +63,8 @@ export class MultiTask {
     if (typeof this.options.logger === 'function') {
       this.logger = this.options.logger
     } else if (this.options.logger === false || this.options.logger === null) {
-      this.logger = () => {};
+      this.logger = () => {
+      };
     } else if (this.options.logger !== undefined) {
       console.log(`options.logger must be type false | null | (...args) => any`);
     }
@@ -76,7 +93,7 @@ export class MultiTask {
           }
           if (registeredTask) {
             if (message.payload.error) {
-              registeredTask.reject(message.payload.error);
+              registeredTask.reject(parseError(message.payload.error));
             } else {
               registeredTask.resolve(message.payload.result);
             }

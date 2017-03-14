@@ -28,7 +28,7 @@ export interface RegisteredTask extends TaskWithUUID {
 
 export interface Result extends TaskWithUUID {
   result?: any;
-  error?: Error;
+  error?: ErrorObject;
 }
 
 export interface Options {
@@ -53,4 +53,8 @@ export interface MessageFromWorker extends Message {
 export interface ProcessManagement {
   reference: ChildProcess;
   isBusy: boolean;
+}
+
+export interface ErrorObject {
+  message: string;
 }

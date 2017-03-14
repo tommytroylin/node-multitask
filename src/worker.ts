@@ -1,4 +1,15 @@
-import { MessageFromMaster, MessageType, MessageFromWorker, Result } from  '../types/index';
+import {
+  MessageFromMaster,
+  MessageType,
+  MessageFromWorker,
+  Result,
+  ErrorObject,
+} from  '../types/index';
+
+function objectifyError(error: Error): ErrorObject {
+  const { message } = error;
+  return { message };
+}
 
 process.on('message', async (message: MessageFromMaster) => {
   const payload = { ...message.payload };
@@ -11,7 +22,7 @@ process.on('message', async (message: MessageFromMaster) => {
     process.send(start);
     let result;
     timer = setTimeout(() => {
-      (payload as Result).error = new Error(`Task ${message.payload.uuid} is timeout \n Start Time: ${start.time}\n Worker file: ${payload.work}\n Worker data: ${payload.data}`);
+      (payload as Result).error = objectifyError(new Error(`Task ${message.payload.uuid} is timeout \n Start Time: ${start.time}\n Worker file: ${payload.work}\n Worker data: ${payload.data}`));
       const finish: MessageFromWorker = { type: MessageType.finish, time: Date.now(), payload, willExit: true };
       process.send(finish);
       process.exit(1);
@@ -27,7 +38,7 @@ process.on('message', async (message: MessageFromMaster) => {
   } catch (error) {
     clearTimeout(timer);
     console.error(error);
-    (payload as Result).error = error;
+    (payload as Result).error = objectifyError(error);
     const finish: MessageFromWorker = { type: MessageType.finish, time: Date.now(), payload };
     process.send(finish);
   }
