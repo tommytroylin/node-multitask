@@ -1,10 +1,14 @@
 {
   "name": "node-multitask",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A simple multi-core task runner",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tommytroylin/node-multitask"
   },
   "author": "Tommy Troy Lin",
   "license": "MIT",
