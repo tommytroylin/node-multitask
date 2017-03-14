@@ -13,7 +13,7 @@ function objectifyError(error: Error): ErrorObject {
 
 process.on('message', async (message: MessageFromMaster) => {
   const payload = { ...message.payload };
-  const timeout = payload.timeout && payload.timeout < 3600000 ? payload.timeout : 3600000; // 1h
+  const timeout = payload.timeout && payload.timeout < payload.maxTimeout ? payload.timeout : payload.maxTimeout; // 1h
   const receive: MessageFromWorker = { type: MessageType.receive, time: Date.now(), payload };
   let timer;
   process.send(receive);

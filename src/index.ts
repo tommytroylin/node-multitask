@@ -36,8 +36,7 @@ export class MultiTask {
     this.logger(`Worker ${oldProcess.reference.pid} seems to be terminated`);
     try {
       oldProcess.reference.kill();
-    } catch (e) {
-    }
+    } catch (e) {}
     oldProcess = this._startWorker();
     this._dispatchTaskTo(oldProcess, this.pendingTasks.shift());
   }
@@ -63,8 +62,7 @@ export class MultiTask {
     if (typeof this.options.logger === 'function') {
       this.logger = this.options.logger
     } else if (this.options.logger === false || this.options.logger === null) {
-      this.logger = () => {
-      };
+      this.logger = () => {};
     } else if (this.options.logger !== undefined) {
       console.log(`options.logger must be type false | null | (...args) => any`);
     }
@@ -128,6 +126,7 @@ export class MultiTask {
   async runTask(task: Task): Promise<any> {
     this.initialize();
     let { work, __dirname }  = task;
+    const { maxTimeout = 3600000 } = this.options;
     const uuid = uuidV4();
     if (__dirname) {
       work = join(__dirname, work);
@@ -139,6 +138,7 @@ export class MultiTask {
         reject,
         ...task,
         work,
+        maxTimeout,
       };
       this.registerTask(newTask);
       const idleProcess = this._getAnIdleProcess();

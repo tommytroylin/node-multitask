@@ -14,6 +14,7 @@ export interface Task {
   work: string;
   data?: any;
   __dirname?: string;
+  maxTimeout?: number;
 }
 
 export interface TaskWithUUID extends Task {
@@ -34,6 +35,7 @@ export interface Result extends TaskWithUUID {
 export interface Options {
   logger?: false| null | logger;
   thread?: number;
+  maxTimeout?: number;
 }
 
 export interface Message {
