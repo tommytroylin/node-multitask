@@ -9,7 +9,23 @@ const numberOfCPUs = cpus().length;
 
 export class MultiTask {
 
-  private static _dispatchNewTaskTo(newProcess: ProcessManagement, task?: TaskWithUUID) {
+  private _startWorker() {
+    const newProcess: ProcessManagement = { reference: fork(`${__dirname}/worker`), isBusy: false };
+    this.logger(`Initializing Worker ${newProcess.reference.pid}`);
+    newProcess.reference.on('message', this._generateMessageHandler(newProcess));
+    newProcess.reference.on('exit', () => this._restartWorker(newProcess));
+    return newProcess;
+  }
+
+  private _restartWorker(oldProcess: ProcessManagement) {
+    try {
+      oldProcess.reference.kill();
+    } catch (e) {}
+    oldProcess = this._startWorker();
+    this._dispatchTaskTo(oldProcess, this.pendingTasks.shift());
+  }
+
+  private _dispatchTaskTo(newProcess: ProcessManagement, task?: TaskWithUUID) {
     if (!task) {
       return;
     }
@@ -54,7 +70,7 @@ export class MultiTask {
           this.logger(`Process ${newProcess.reference.pid} finished running Task ${message.payload.uuid} at ${message.time}`);
           const registeredTask = this.popRegisteredTask(message.payload.uuid);
           newProcess.isBusy = false;
-          MultiTask._dispatchNewTaskTo(newProcess, this.pendingTasks.shift());
+          this._dispatchTaskTo(newProcess, this.pendingTasks.shift());
           if (message.payload.error) {
             registeredTask.reject(message.payload.error);
           } else {
@@ -82,10 +98,7 @@ export class MultiTask {
     this.logger(`Initializing Master ${process.pid}`);
     const { thread = numberOfCPUs - 1 } = this.options;
     for (let i = 0; i < thread; i += 1) {
-      const newProcess: ProcessManagement = { reference: fork(`${__dirname}/worker`), isBusy: false };
-      this.logger(`Initializing Worker ${newProcess.reference.pid}`);
-      newProcess.reference.on('message', this._generateMessageHandler(newProcess));
-      this.childProcesses.push(newProcess);
+      this.childProcesses.push(this._startWorker());
     }
     this.initialized = true;
   }
@@ -109,7 +122,7 @@ export class MultiTask {
       const idleProcess = this._getAnIdleProcess();
       if (idleProcess) {
         idleProcess.isBusy = true;
-        MultiTask._dispatchNewTaskTo(idleProcess, newTask);
+        this._dispatchTaskTo(idleProcess, newTask);
       } else {
         this.pendingTasks.push(newTask);
       }
