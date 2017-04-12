@@ -25,7 +25,7 @@ process.on('message', async (message: Message.FromMaster) => {
       process.send(generate(message));
       return;
     case Message.Type.dispatch:
-      const { code, data, path } = message.payload;
+      const { code, data, virtualFilePath } = message.payload;
       const vm = new NodeVM({
         console: 'inherit',
         sandbox: data || {},
@@ -36,7 +36,7 @@ process.on('message', async (message: Message.FromMaster) => {
       });
       process.send(generate(message, { type: Message.Type.start }));
       try {
-        const result: any = vm.run(code, path);
+        const result: any = vm.run(code, virtualFilePath);
         let data;
         if (result && result.then) {
           data = await result;

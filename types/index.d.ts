@@ -13,7 +13,7 @@ declare namespace Task {
   }
   export interface External {
     code: string;
-    path?: string;
+    virtualFilePath?: string;
     data?: object;
   }
 
