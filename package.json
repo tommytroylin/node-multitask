@@ -1,7 +1,7 @@
 {
   "name": "node-multitask",
-  "version": "0.3.1",
-  "description": "A simple multi-core task runner",
+  "version": "0.4.0",
+  "description": "A simple multi task runner",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,11 +13,13 @@
   "author": "Tommy Troy Lin",
   "license": "MIT",
   "dependencies": {
-    "uuid": "^3.0.1"
+    "core-js": "^2.4.1",
+    "uuid": "^3.0.1",
+    "vm2": "^3.4.6"
   },
   "devDependencies": {
-    "@types/node": "^7.0.8",
+    "@types/node": "^7.0.12",
     "@types/uuid": "^2.0.29",
-    "typescript": "^2.2.1"
+    "typescript": "^2.2.2"
   }
 }

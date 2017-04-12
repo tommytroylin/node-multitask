@@ -1,44 +1,59 @@
-import {
-  MessageFromMaster,
-  MessageType,
-  MessageFromWorker,
-  Result,
-  ErrorObject,
-} from  '../types/index';
+import { Message } from  '../types';
 
-function objectifyError(error: Error): ErrorObject {
+import { NodeVM } from 'vm2';
+
+function objectifyError(error: Error): Message.ErrorObject {
   const { message } = error;
   return { message };
 }
 
-process.on('message', async (message: MessageFromMaster) => {
-  const payload = { ...message.payload };
-  const timeout = payload.timeout && payload.timeout < payload.maxTimeout ? payload.timeout : payload.maxTimeout; // 1h
-  const receive: MessageFromWorker = { type: MessageType.receive, time: Date.now(), payload };
-  const start: MessageFromWorker = { type: MessageType.start, time: Date.now(), payload };
-  process.send(receive);
-  process.send(start);
-  const work = Promise.race([
-    new Promise((resolve, reject) => {
-      try {
-        const result = require(payload.work)(payload.data);
-        if (result instanceof Promise || typeof result.then === 'function') {
-          result.then(r => resolve(r));
-        } else {
-          resolve(result);
-        }
-      } catch (e) {
-        reject(e)
-      }
-    }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`Task ${message.payload.uuid} is timeout \n Start Time: ${start.time}\n Worker file: ${payload.work}\n Worker data: ${payload.data}`)), timeout)),
-  ]);
-  try {
-    (payload as Result).result = await work;
-  } catch (error) {
-    (payload as Result).error = objectifyError(error);
-  } finally {
-    const finish: MessageFromWorker = { type: MessageType.finish, time: Date.now(), payload };
-    process.send(finish);
+function generate(message: Message.FromMaster, overwrites?, payloadOverwrites?): Message.FromWorker {
+  const result = Object.assign({}, message) as Message.FromWorker;
+  result.time = Date.now();
+  Object.assign(result, overwrites);
+  if (result.payload) {
+    Object.assign(result.payload, payloadOverwrites);
+  } else {
+    result.payload = payloadOverwrites;
   }
+  return result;
+}
+
+process.on('message', async (message: Message.FromMaster) => {
+  switch (message.type) {
+    case Message.Type.heartbeat:
+      process.send(generate(message));
+      return;
+    case Message.Type.dispatch:
+      const { code, data, path } = message.payload;
+      const vm = new NodeVM({
+        console: 'inherit',
+        sandbox: data || {},
+        require: {
+          external: true,
+          builtin: ['path'], // TODO add more
+        },
+      });
+      process.send(generate(message, { type: Message.Type.start }));
+      try {
+        const result: any = vm.run(code, path);
+        let data;
+        if (result && result.then) {
+          data = await result;
+        } else {
+          data = result;
+        }
+        process.send(generate(message, { type: Message.Type.finish }, { data }));
+      } catch (e) {
+        const error = objectifyError(e);
+        process.send(generate(message, { type: Message.Type.finish }, { error }));
+      }
+      break;
+    default:
+      return;
+  }
+});
+
+process.on('uncaughtException', (err) => {
+  process.send({ type: Message.Type.uncaughtException, time: Date.now() });
 });

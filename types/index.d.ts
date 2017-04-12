@@ -1,62 +1,100 @@
-import { ChildProcess } from 'child_process';
+import { ChildProcess, ForkOptions } from 'child_process';
 
 type timestamp = number;
 type logger = (...args) => any;
 
-export const enum MessageType {
-  dispatch,
-  receive,
-  start,
-  finish,
+declare namespace Task {
+
+  export const enum Type {
+    pending,
+    dispatched,
+    started,
+    finished,
+  }
+  export interface External {
+    code: string;
+    path?: string;
+    data?: object;
+  }
+
+  export interface Base extends External {
+    type: Type;
+    uuid: string;
+  }
+
+  export interface Registered extends Base {
+    resolve: (result?) => any;
+    reject: (error?) => any;
+    data?: object;
+    on?: Process.Child;
+  }
+
+  export interface Result extends Base {
+    canceled?: boolean;
+    data?: object;
+    error?: Message.ErrorObject;
+  }
+
+  export interface Registry {
+    [prop: string]: Registered;
+  }
+
 }
 
-export interface Task {
-  work: string;
-  data?: any;
-  __dirname?: string;
-  maxTimeout?: number;
-}
+declare namespace Process {
 
-export interface TaskWithUUID extends Task {
-  uuid: string;
-  timeout?: number;
-}
+  export interface Child {
+    reference: ChildProcess;
+    runningJobs: Array<Task.Registered>;
+    uncaughtException?: boolean;
+    heartbeatLoss: number;
+  }
 
-export interface RegisteredTask extends TaskWithUUID {
-  resolve: (result?) => any;
-  reject: (error?) => any;
-}
+  export interface Registry {
+    [prop: string]: Child;
+  }
 
-export interface Result extends TaskWithUUID {
-  result?: any;
-  error?: ErrorObject;
+  export interface CooldownRegistry {
+    [prop: string]: { errorCount: number, process: Child};
+  }
+
 }
 
 export interface Options {
-  logger?: false| null | logger;
+  logger?: null | logger;
   thread?: number;
+  maxQueue?: number;
   maxTimeout?: number;
+  heartbeatInterval?: number;
+  maxHeartbeatLoss?: number;
+  forkWorkerOptions?: ForkOptions;
 }
 
-export interface Message {
-  type: MessageType;
-  time: timestamp;
+declare namespace Message {
+
+  export const enum Type {
+    dispatch,
+    start,
+    finish,
+    heartbeat,
+    uncaughtException,
+  }
+
+  export interface Base {
+    type: Type;
+    time: timestamp;
+  }
+
+  export interface FromMaster extends Base {
+    payload?: Task.Base;
+  }
+
+  export interface FromWorker extends Base {
+    payload?: Task.Result;
+  }
+
+  export interface ErrorObject {
+    message: string;
+  }
 }
 
-export interface MessageFromMaster extends Message {
-  payload: TaskWithUUID;
-}
-
-export interface MessageFromWorker extends Message {
-  payload: Result;
-  willExit?: boolean;
-}
-
-export interface ProcessManagement {
-  reference: ChildProcess;
-  isBusy: boolean;
-}
-
-export interface ErrorObject {
-  message: string;
-}
