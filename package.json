@@ -1,6 +1,6 @@
 {
   "name": "node-multitask",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A simple multi task runner",
   "main": "dist/index.js",
   "scripts": {
@@ -21,5 +21,6 @@
     "@types/node": "^7.0.12",
     "@types/uuid": "^2.0.29",
     "typescript": "^2.2.2"
-  }
+  },
+  "typings": "./dist"
 }
