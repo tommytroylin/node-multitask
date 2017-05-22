@@ -31,8 +31,26 @@ process.on('message', async (message: Message.FromMaster) => {
         sandbox: data || {},
         require: {
           external: true,
-          builtin: ['assert', 'crypto', 'dns', 'events', 'http', 'https', 'net', 'querystring', 'stream', 'string_decoder', 'tls', 'dgram', 'url', 'zlib'],
-          context: 'sandbox',
+          builtin: [
+            'assert',
+            'buffer',
+            'crypto',
+            'dns',
+            'events',
+            'http',
+            'https',
+            'net',
+            'path',
+            'punycode',
+            'querystring',
+            'stream',
+            'string_decoder',
+            'tls',
+            'dgram',
+            'url',
+            'zlib',
+            'util',
+          ],
         },
       });
       process.send(generate(message, { type: Message.Type.start }));
