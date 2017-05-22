@@ -1,7 +1,7 @@
 import { ChildProcess, ForkOptions } from 'child_process';
 
 type timestamp = number;
-type logger = (...args) => any;
+type logger = (...args: any[]) => any;
 
 declare namespace Task {
 
@@ -23,8 +23,8 @@ declare namespace Task {
   }
 
   export interface Registered extends Base {
-    resolve: (result?) => any;
-    reject: (error?) => any;
+    resolve: (result?: any) => any;
+    reject: (error?: any) => any;
     data?: object;
     on?: Process.Child;
   }
@@ -55,7 +55,7 @@ declare namespace Process {
   }
 
   export interface CooldownRegistry {
-    [prop: string]: { errorCount: number, process: Child};
+    [prop: string]: { errorCount: number, process: Child };
   }
 
 }
