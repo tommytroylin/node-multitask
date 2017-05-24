@@ -171,8 +171,8 @@ export class MultiTask {
 
   private _createRegisterTask(detail: Task.External, resolve: () => void, reject: () => void): string {
     const uuid = uuidV4();
-    const { code, data, virtualFilePath } = detail;
-    this.tasks[uuid] = { type: Task.Type.pending, uuid, code, data, virtualFilePath, resolve, reject };
+    const { code, data, virtualFilePath, allowAllBuiltIns } = detail;
+    this.tasks[uuid] = { type: Task.Type.pending, uuid, code, data, virtualFilePath, allowAllBuiltIns, resolve, reject };
     return uuid;
   }
 
