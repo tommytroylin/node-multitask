@@ -15,6 +15,7 @@ declare namespace Task {
     code: string;
     virtualFilePath?: string;
     data?: object;
+    allowAllBuiltIns?: boolean;
   }
 
   export interface Base extends External {

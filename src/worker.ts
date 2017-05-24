@@ -2,6 +2,46 @@ import { Message } from  '../types';
 
 import { NodeVM } from 'vm2';
 
+const allowedBuiltIns = [
+  'assert',
+  'buffer',
+  'crypto',
+  'dns',
+  'events',
+  'http',
+  'https',
+  'net',
+  'path',
+  'punycode',
+  'querystring',
+  'stream',
+  'string_decoder',
+  'tls',
+  'dgram',
+  'url',
+  'zlib',
+  'util',
+];
+
+const allBuiltIns = [
+  'child_process',
+  'cluster',
+  'console',
+  'constants',
+  'domain',
+  'fs',
+  'module',
+  'os',
+  'process',
+  'readline',
+  'repl',
+  'timers',
+  'tty',
+  'v8',
+  'vm',
+  ...allowedBuiltIns
+];
+
 function objectifyError(error: Error): Message.ErrorObject {
   const { message } = error;
   return { message };
@@ -25,32 +65,13 @@ process.on('message', async (message: Message.FromMaster) => {
       process.send(generate(message));
       return;
     case Message.Type.dispatch:
-      const { code, data, virtualFilePath } = message.payload;
+      const { code, data, virtualFilePath, allowAllBuiltIns } = message.payload;
       const vm = new NodeVM({
         console: 'inherit',
         sandbox: data || {},
         require: {
           external: true,
-          builtin: [
-            'assert',
-            'buffer',
-            'crypto',
-            'dns',
-            'events',
-            'http',
-            'https',
-            'net',
-            'path',
-            'punycode',
-            'querystring',
-            'stream',
-            'string_decoder',
-            'tls',
-            'dgram',
-            'url',
-            'zlib',
-            'util',
-          ],
+          builtin: allowAllBuiltIns ? allBuiltIns: allowedBuiltIns,
         },
       });
       process.send(generate(message, { type: Message.Type.start }));
